@@ -1,0 +1,96 @@
+#!/bin/bash
+
+# VM Health Check Script
+# Checks CPU, Memory, and Disk usage
+# Healthy: All parameters < 60%
+# Unhealthy: Any parameter >= 60%
+
+THRESHOLD=60
+EXPLAIN_MODE=false
+
+# Check if explain argument is passed
+if [ "$1" == "explain" ]; then
+    EXPLAIN_MODE=true
+fi
+
+# Function to get CPU usage
+get_cpu_usage() {
+    # Get CPU usage averaged over 1 second
+    cpu_usage=$(top -bn2 -d 0.5 | grep "Cpu(s)" | tail -1 | awk '{print $2}' | cut -d'%' -f1)
+    # If top doesn't work as expected, try alternative method
+    if [ -z "$cpu_usage" ]; then
+        cpu_usage=$(grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}')
+    fi
+    printf "%.0f" "$cpu_usage"
+}
+
+# Function to get memory usage
+get_memory_usage() {
+    memory_usage=$(free | grep Mem | awk '{printf "%.0f", $3/$2 * 100.0}')
+    echo "$memory_usage"
+}
+
+# Function to get disk usage
+get_disk_usage() {
+    # Get disk usage for root partition
+    disk_usage=$(df -h / | awk 'NR==2 {print $5}' | cut -d'%' -f1)
+    echo "$disk_usage"
+}
+
+# Get current metrics
+CPU=$(get_cpu_usage)
+MEMORY=$(get_memory_usage)
+DISK=$(get_disk_usage)
+
+# Initialize health status
+HEALTH_STATUS="Healthy"
+REASONS=()
+
+# Check each parameter
+if [ "$CPU" -ge "$THRESHOLD" ]; then
+    HEALTH_STATUS="Unhealthy"
+    REASONS+=("CPU usage is ${CPU}% (threshold: ${THRESHOLD}%)")
+fi
+
+if [ "$MEMORY" -ge "$THRESHOLD" ]; then
+    HEALTH_STATUS="Unhealthy"
+    REASONS+=("Memory usage is ${MEMORY}% (threshold: ${THRESHOLD}%)")
+fi
+
+if [ "$DISK" -ge "$THRESHOLD" ]; then
+    HEALTH_STATUS="Unhealthy"
+    REASONS+=("Disk usage is ${DISK}% (threshold: ${THRESHOLD}%)")
+fi
+
+# Print results
+echo "==================================="
+echo "VM Health Check Report"
+echo "==================================="
+echo "CPU Usage:    ${CPU}%"
+echo "Memory Usage: ${MEMORY}%"
+echo "Disk Usage:   ${DISK}%"
+echo "-----------------------------------"
+echo "Health Status: ${HEALTH_STATUS}"
+echo "==================================="
+
+# If explain mode is enabled, show reasons
+if [ "$EXPLAIN_MODE" = true ]; then
+    echo ""
+    if [ "$HEALTH_STATUS" == "Unhealthy" ]; then
+        echo "Reason for Unhealthy status:"
+        for reason in "${REASONS[@]}"; do
+            echo "  - $reason"
+        done
+    else
+        echo "Reason for Healthy status:"
+        echo "  - All parameters (CPU: ${CPU}%, Memory: ${MEMORY}%, Disk: ${DISK}%) are below the ${THRESHOLD}% threshold"
+    fi
+    echo "==================================="
+fi
+
+# Exit with appropriate code
+if [ "$HEALTH_STATUS" == "Unhealthy" ]; then
+    exit 1
+else
+    exit 0
+fi
