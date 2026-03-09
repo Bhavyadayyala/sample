@@ -39,3 +39,28 @@ curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
 chmod +x ./kind
 kind --version
 
+
+#java for maven 
+sudo apt update
+sudo apt install openjdk-17-jdk -y
+
+#sonarqube
+sudo useradd -m -d /opt/sonarqube -s /bin/bash sonarqube (creating sonarqube user)
+
+cd /opt
+sudo wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-10.3.zip
+
+sudo apt install unzip -y
+sudo unzip sonarqube-10.3.zip
+sudo mv sonarqube-10.3 sonarqube (exrract the downloaded)
+
+sudo chown -R sonarqube:sonarqube /opt/sonarqube (permission)
+sudo nano /opt/sonarqube/conf/sonar.properties ( configure sonar)
+
+sudo su - sonarqube
+cd /opt/sonarqube/bin/linux-x86-64
+./sonar.sh start (switch to simarqube user )
+
+
+
+http://<server-ip>:9000 (access)
