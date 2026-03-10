@@ -49,6 +49,7 @@ sudo useradd -m -d /opt/sonarqube -s /bin/bash sonarqube (creating sonarqube use
 
 cd /opt
 sudo wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-10.3.zip
+sudo wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-9.9.4.87374.zip
 
 sudo apt install unzip -y
 sudo unzip sonarqube-10.3.zip
